@@ -1,1 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screenshot Website Generator</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .description {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            margin-bottom: 25px;
+        }
+        
+        input[type="url"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px 0 0 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="url"]:focus {
+            border-color: #6e8efb;
+        }
+        
+        button {
+            background: #6e8efb;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5a7de4;
+        }
+        
+        .device-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .device-btn {
+            padding: 12px 20px;
+            background: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .device-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+        
+        .result {
+            text-align: center;
+        }
+        
+        .loading {
+            display: none;
+            margin: 20px 0;
+            font-size: 18px;
+            color: #7f8c8d;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .screenshot-container {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .screenshot {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        
+        .download-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .download-btn:hover {
+            background: #219653;
+        }
+        
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #ecf0f1;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+            
+            input[type="url"] {
+                border-radius: 8px;
+                margin-bottom: 10px;
+            }
+            
+            button {
+                border-radius: 8px;
+            }
+            
+            .device-options {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Screenshot Website Generator</h1>
+            <p class="description">Ambil screenshot dari website mana pun dengan mudah. Pilih perangkat yang diinginkan dan dapatkan hasilnya.</p>
+        </header>
+        
+        <div class="input-group">
+            <input type="url" id="urlInput" placeholder="Masukkan URL website (contoh: https://github.com)" required>
+            <button id="captureBtn">Ambil Screenshot</button>
+        </div>
+        
+        <div class="device-options">
+            <div class="device-btn active" data-device="desktop">Desktop</div>
+            <div class="device-btn" data-device="tablet">Tablet</div>
+            <div class="device-btn" data-device="phone">Phone</div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Sedang mengambil screenshot...</p>
+        </div>
+        
+        <div class="error" id="error">
+            Terjadi kesalahan. Pastikan URL valid dan coba lagi.
+        </div>
+        
+        <div class="result">
+            <div class="screenshot-container" id="screenshotContainer">
+                <img id="screenshotImg" class="screenshot" alt="Website Screenshot">
+                <a id="downloadLink" class="download-btn" download="screenshot.png">Download Screenshot</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Dibuat dengan ❤️ menggunakan HTML, CSS, dan JavaScript</p>
+    </footer>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlInput = document.getElementById('urlInput');
+            const captureBtn = document.getElementById('captureBtn');
+            const deviceBtns = document.querySelectorAll('.device-btn');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const screenshotContainer = document.getElementById('screenshotContainer');
+            const screenshotImg = document.getElementById('screenshotImg');
+            const downloadLink = document.getElementById('downloadLink');
+            
+            let selectedDevice = 'desktop';
+            
+            // Device selection
+            deviceBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    deviceBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedDevice = this.getAttribute('data-device');
+                });
+            });
+            
+            // Capture screenshot
+            captureBtn.addEventListener('click', async function() {
+                const url = urlInput.value.trim();
+                
+                if (!url) {
+                    alert('Masukkan URL website terlebih dahulu!');
+                    return;
+                }
+                
+                // Validasi URL
+                try {
+                    new URL(url);
+                } catch (e) {
+                    alert('Format URL tidak valid! Pastikan URL diawali dengan http:// atau https://');
+                    return;
+                }
+                
+                // Tampilkan loading, sembunyikan error dan hasil sebelumnya
+                loading.style.display = 'block';
+                error.style.display = 'none';
+                screenshotContainer.style.display = 'none';
+                
+                try {
+                    // Menggunakan API route yang akan kita buat di Vercel
+                    const response = await axios.post('/api/screenshot', {
+                        url: url,
+                        device: selectedDevice
+                    }, {
+                        responseType: 'arraybuffer'
+                    });
+                    
+                    // Konversi array buffer ke blob
+                    const byteArray = new Uint8Array(response.data);
+                    const blob = new Blob([byteArray], {type: 'image/png'});
+                    
+                    // Buat URL objek untuk gambar
+                    const imageUrl = URL.createObjectURL(blob);
+                    
+                    // Tampilkan gambar
+                    screenshotImg.src = imageUrl;
+                    downloadLink.href = imageUrl;
+                    
+                    // Tampilkan hasil, sembunyikan loading
+                    loading.style.display = 'none';
+                    screenshotContainer.style.display = 'block';
+                } catch (err) {
+                    console.error('Error:', err);
+                    loading.style.display = 'none';
+                    error.style.display = 'block';
+                    
+                    if (err.response && err.response.data) {
+                        // Try to parse error message if it's JSON
+                        try {
+                            const decoder = new TextDecoder('utf-8');
+                            const errorData = JSON.parse(decoder.decode(err.response.data));
+                            error.textContent = 'Terjadi kesalahan: ' + (errorData.error || 'Gagal mengambil screenshot');
+                        } catch (e) {
+                            error.textContent = 'Terjadi kesalahan: Gagal mengambil screenshot';
+                        }
+                    } else {
+                        error.textContent = 'Terjadi kesalahan: ' + (err.message || 'Gagal mengambil screenshot');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+              </html>
