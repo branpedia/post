@@ -88,13 +88,13 @@ async function ssweb(url, device = 'desktop') {
         }).then(({ data }) => {
           let result = {
             status: 200,
-            author: 'Ryzn',
+            author: 'Bran',
             result: data
           };
           resolve(result);
         }).catch(reject);
       } else {
-        reject({ status: 404, author: 'Ryzn', message: response.data });
+        reject({ status: 404, author: 'Bran', message: response.data });
       }
     }).catch(reject);
   });
