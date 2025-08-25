@@ -14,7 +14,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
             color: #333;
             min-height: 100vh;
             padding: 20px;
@@ -38,6 +38,9 @@
             color: #2c3e50;
             margin-bottom: 10px;
             font-size: 2.5rem;
+            background: linear-gradient(45deg, #6e8efb, #a777e3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
         .description {
@@ -167,6 +170,19 @@
             text-align: center;
             margin-top: 20px;
             display: none;
+            padding: 15px;
+            background: #ffeaea;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ffeeba;
         }
         
         footer {
@@ -199,12 +215,16 @@
 <body>
     <div class="container">
         <header>
-            <h1>Screenshot Website Generator</h1>
+            <h1>Website Screenshot Generator</h1>
             <p class="description">Ambil screenshot dari website mana pun dengan mudah. Pilih perangkat yang diinginkan dan dapatkan hasilnya.</p>
         </header>
         
+        <div class="warning">
+            <strong>Peringatan Keamanan:</strong> Jangan masukkan informasi sensitif seperti kata sandi. Tool ini hanya untuk mengambil screenshot website publik.
+        </div>
+        
         <div class="input-group">
-            <input type="url" id="urlInput" placeholder="Masukkan URL website (contoh: https://github.com)" required>
+            <input type="url" id="urlInput" placeholder="Masukkan URL website (contoh: https://example.com)" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
             <button id="captureBtn">Ambil Screenshot</button>
         </div>
         
@@ -268,7 +288,10 @@
                 
                 // Validasi URL
                 try {
-                    new URL(url);
+                    const urlObj = new URL(url);
+                    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+                        throw new Error('Protocol harus http atau https');
+                    }
                 } catch (e) {
                     alert('Format URL tidak valid! Pastikan URL diawali dengan http:// atau https://');
                     return;
@@ -317,10 +340,13 @@
                             error.textContent = 'Terjadi kesalahan: Gagal mengambil screenshot';
                         }
                     } else {
-                        error.textContent = 'Terjadi kesalahan: ' + (err.message || 'Gagal mengambil screenshot');
+                        error.textContent = 'Terjadi kesalahan: ' + (err.message || 'Gagal mengambil screenshot. Pastikan website mengizinkan screenshot.');
                     }
                 }
             });
+            
+            // Contoh URL untuk testing
+            urlInput.value = "https://example.com";
         });
     </script>
 </body>
