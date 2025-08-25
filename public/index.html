@@ -185,11 +185,41 @@
             border: 1px solid #ffeeba;
         }
         
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+            display: none;
+        }
+        
         footer {
             text-align: center;
             margin-top: 40px;
             color: #ecf0f1;
             font-size: 14px;
+        }
+        
+        .url-list {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .url-chip {
+            background: #e9ecef;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .url-chip:hover {
+            background: #dee2e6;
         }
         
         @media (max-width: 768px) {
@@ -209,6 +239,10 @@
             .device-options {
                 flex-wrap: wrap;
             }
+            
+            .url-list {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -223,9 +257,20 @@
             <strong>Peringatan Keamanan:</strong> Jangan masukkan informasi sensitif seperti kata sandi. Tool ini hanya untuk mengambil screenshot website publik.
         </div>
         
+        <div class="success" id="successMessage">
+            Screenshot berhasil diambil! Beberapa website mungkin memiliki proteksi terhadap screenshot.
+        </div>
+        
         <div class="input-group">
             <input type="url" id="urlInput" placeholder="Masukkan URL website (contoh: https://example.com)" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
             <button id="captureBtn">Ambil Screenshot</button>
+        </div>
+        
+        <div class="url-list">
+            <div class="url-chip" data-url="https://example.com">Example.com</div>
+            <div class="url-chip" data-url="https://wikipedia.org">Wikipedia</div>
+            <div class="url-chip" data-url="https://httpbin.org">HttpBin</div>
+            <div class="url-chip" data-url="https://news.ycombinator.com">Hacker News</div>
         </div>
         
         <div class="device-options">
@@ -262,9 +307,11 @@
             const deviceBtns = document.querySelectorAll('.device-btn');
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
+            const successMessage = document.getElementById('successMessage');
             const screenshotContainer = document.getElementById('screenshotContainer');
             const screenshotImg = document.getElementById('screenshotImg');
             const downloadLink = document.getElementById('downloadLink');
+            const urlChips = document.querySelectorAll('.url-chip');
             
             let selectedDevice = 'desktop';
             
@@ -274,6 +321,13 @@
                     deviceBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     selectedDevice = this.getAttribute('data-device');
+                });
+            });
+            
+            // URL chips selection
+            urlChips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    urlInput.value = this.getAttribute('data-url');
                 });
             });
             
@@ -300,6 +354,7 @@
                 // Tampilkan loading, sembunyikan error dan hasil sebelumnya
                 loading.style.display = 'block';
                 error.style.display = 'none';
+                successMessage.style.display = 'none';
                 screenshotContainer.style.display = 'none';
                 
                 try {
@@ -308,23 +363,34 @@
                         url: url,
                         device: selectedDevice
                     }, {
-                        responseType: 'arraybuffer'
+                        responseType: 'arraybuffer',
+                        timeout: 30000 // 30 seconds timeout
                     });
                     
                     // Konversi array buffer ke blob
                     const byteArray = new Uint8Array(response.data);
+                    
+                    // Periksa apakah hasil screenshot valid (bukan halaman error)
+                    if (byteArray.length < 1000) {
+                        throw new Error('Screenshot gagal diambil. Website mungkin memiliki proteksi.');
+                    }
+                    
                     const blob = new Blob([byteArray], {type: 'image/png'});
                     
                     // Buat URL objek untuk gambar
                     const imageUrl = URL.createObjectURL(blob);
                     
                     // Tampilkan gambar
+                    screenshotImg.onload = function() {
+                        URL.revokeObjectURL(imageUrl); // Clean up memory
+                    };
                     screenshotImg.src = imageUrl;
                     downloadLink.href = imageUrl;
                     
                     // Tampilkan hasil, sembunyikan loading
                     loading.style.display = 'none';
                     screenshotContainer.style.display = 'block';
+                    successMessage.style.display = 'block';
                 } catch (err) {
                     console.error('Error:', err);
                     loading.style.display = 'none';
@@ -335,12 +401,14 @@
                         try {
                             const decoder = new TextDecoder('utf-8');
                             const errorData = JSON.parse(decoder.decode(err.response.data));
-                            error.textContent = 'Terjadi kesalahan: ' + (errorData.error || 'Gagal mengambil screenshot');
+                            error.textContent = 'Terjadi kesalahan: ' + (errorData.error || 'Gagal mengambil screenshot. Website mungkin memiliki proteksi.');
                         } catch (e) {
-                            error.textContent = 'Terjadi kesalahan: Gagal mengambil screenshot';
+                            error.textContent = 'Terjadi kesalahan: Gagal mengambil screenshot. Website mungkin memiliki proteksi.';
                         }
+                    } else if (err.code === 'ECONNABORTED') {
+                        error.textContent = 'Terjadi timeout. Coba lagi dengan website yang lebih sederhana.';
                     } else {
-                        error.textContent = 'Terjadi kesalahan: ' + (err.message || 'Gagal mengambil screenshot. Pastikan website mengizinkan screenshot.');
+                        error.textContent = 'Terjadi kesalahan: ' + (err.message || 'Gagal mengambil screenshot. Website mungkin memiliki proteksi.');
                     }
                 }
             });
