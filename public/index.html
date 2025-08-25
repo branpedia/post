@@ -14,7 +14,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
             color: #333;
             min-height: 100vh;
             padding: 20px;
@@ -38,9 +38,6 @@
             color: #2c3e50;
             margin-bottom: 10px;
             font-size: 2.5rem;
-            background: linear-gradient(45deg, #6e8efb, #a777e3);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
         
         .description {
@@ -170,29 +167,6 @@
             text-align: center;
             margin-top: 20px;
             display: none;
-            padding: 15px;
-            background: #ffeaea;
-            border-radius: 8px;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .warning {
-            background: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #ffeeba;
-        }
-        
-        .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #c3e6cb;
-            display: none;
         }
         
         footer {
@@ -200,26 +174,6 @@
             margin-top: 40px;
             color: #ecf0f1;
             font-size: 14px;
-        }
-        
-        .url-list {
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-        
-        .url-chip {
-            background: #e9ecef;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .url-chip:hover {
-            background: #dee2e6;
         }
         
         @media (max-width: 768px) {
@@ -239,38 +193,19 @@
             .device-options {
                 flex-wrap: wrap;
             }
-            
-            .url-list {
-                flex-direction: column;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Website Screenshot Generator</h1>
+            <h1>Screenshot Website Generator</h1>
             <p class="description">Ambil screenshot dari website mana pun dengan mudah. Pilih perangkat yang diinginkan dan dapatkan hasilnya.</p>
         </header>
         
-        <div class="warning">
-            <strong>Peringatan Keamanan:</strong> Jangan masukkan informasi sensitif seperti kata sandi. Tool ini hanya untuk mengambil screenshot website publik.
-        </div>
-        
-        <div class="success" id="successMessage">
-            Screenshot berhasil diambil! Beberapa website mungkin memiliki proteksi terhadap screenshot.
-        </div>
-        
         <div class="input-group">
-            <input type="url" id="urlInput" placeholder="Masukkan URL website (contoh: https://example.com)" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <input type="url" id="urlInput" placeholder="Masukkan URL website (contoh: https://github.com)" required>
             <button id="captureBtn">Ambil Screenshot</button>
-        </div>
-        
-        <div class="url-list">
-            <div class="url-chip" data-url="https://example.com">Example.com</div>
-            <div class="url-chip" data-url="https://wikipedia.org">Wikipedia</div>
-            <div class="url-chip" data-url="https://httpbin.org">HttpBin</div>
-            <div class="url-chip" data-url="https://news.ycombinator.com">Hacker News</div>
         </div>
         
         <div class="device-options">
@@ -307,11 +242,9 @@
             const deviceBtns = document.querySelectorAll('.device-btn');
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
-            const successMessage = document.getElementById('successMessage');
             const screenshotContainer = document.getElementById('screenshotContainer');
             const screenshotImg = document.getElementById('screenshotImg');
             const downloadLink = document.getElementById('downloadLink');
-            const urlChips = document.querySelectorAll('.url-chip');
             
             let selectedDevice = 'desktop';
             
@@ -321,13 +254,6 @@
                     deviceBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     selectedDevice = this.getAttribute('data-device');
-                });
-            });
-            
-            // URL chips selection
-            urlChips.forEach(chip => {
-                chip.addEventListener('click', function() {
-                    urlInput.value = this.getAttribute('data-url');
                 });
             });
             
@@ -342,10 +268,7 @@
                 
                 // Validasi URL
                 try {
-                    const urlObj = new URL(url);
-                    if (!['http:', 'https:'].includes(urlObj.protocol)) {
-                        throw new Error('Protocol harus http atau https');
-                    }
+                    new URL(url);
                 } catch (e) {
                     alert('Format URL tidak valid! Pastikan URL diawali dengan http:// atau https://');
                     return;
@@ -354,7 +277,6 @@
                 // Tampilkan loading, sembunyikan error dan hasil sebelumnya
                 loading.style.display = 'block';
                 error.style.display = 'none';
-                successMessage.style.display = 'none';
                 screenshotContainer.style.display = 'none';
                 
                 try {
@@ -363,34 +285,23 @@
                         url: url,
                         device: selectedDevice
                     }, {
-                        responseType: 'arraybuffer',
-                        timeout: 30000 // 30 seconds timeout
+                        responseType: 'arraybuffer'
                     });
                     
                     // Konversi array buffer ke blob
                     const byteArray = new Uint8Array(response.data);
-                    
-                    // Periksa apakah hasil screenshot valid (bukan halaman error)
-                    if (byteArray.length < 1000) {
-                        throw new Error('Screenshot gagal diambil. Website mungkin memiliki proteksi.');
-                    }
-                    
                     const blob = new Blob([byteArray], {type: 'image/png'});
                     
                     // Buat URL objek untuk gambar
                     const imageUrl = URL.createObjectURL(blob);
                     
                     // Tampilkan gambar
-                    screenshotImg.onload = function() {
-                        URL.revokeObjectURL(imageUrl); // Clean up memory
-                    };
                     screenshotImg.src = imageUrl;
                     downloadLink.href = imageUrl;
                     
                     // Tampilkan hasil, sembunyikan loading
                     loading.style.display = 'none';
                     screenshotContainer.style.display = 'block';
-                    successMessage.style.display = 'block';
                 } catch (err) {
                     console.error('Error:', err);
                     loading.style.display = 'none';
@@ -401,20 +312,15 @@
                         try {
                             const decoder = new TextDecoder('utf-8');
                             const errorData = JSON.parse(decoder.decode(err.response.data));
-                            error.textContent = 'Terjadi kesalahan: ' + (errorData.error || 'Gagal mengambil screenshot. Website mungkin memiliki proteksi.');
+                            error.textContent = 'Terjadi kesalahan: ' + (errorData.error || 'Gagal mengambil screenshot');
                         } catch (e) {
-                            error.textContent = 'Terjadi kesalahan: Gagal mengambil screenshot. Website mungkin memiliki proteksi.';
+                            error.textContent = 'Terjadi kesalahan: Gagal mengambil screenshot';
                         }
-                    } else if (err.code === 'ECONNABORTED') {
-                        error.textContent = 'Terjadi timeout. Coba lagi dengan website yang lebih sederhana.';
                     } else {
-                        error.textContent = 'Terjadi kesalahan: ' + (err.message || 'Gagal mengambil screenshot. Website mungkin memiliki proteksi.');
+                        error.textContent = 'Terjadi kesalahan: ' + (err.message || 'Gagal mengambil screenshot');
                     }
                 }
             });
-            
-            // Contoh URL untuk testing
-            urlInput.value = "https://example.com";
         });
     </script>
 </body>
