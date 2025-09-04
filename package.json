@@ -1,13 +1,17 @@
 {
   "name": "screenshot-website",
   "version": "1.0.0",
-  "description": "Website screenshot generator",
+  "description": "Website screenshot generator with real-time chat",
   "main": "index.html",
   "scripts": {
     "dev": "vercel dev"
   },
   "dependencies": {
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2",
+    "uuid": "^9.0.0",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "@vercel/node": "^2.0.0"
@@ -15,7 +19,9 @@
   "keywords": [
     "screenshot",
     "website",
-    "vercel"
+    "vercel",
+    "chat",
+    "realtime"
   ],
   "author": "Your Name",
   "license": "MIT"
