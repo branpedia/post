@@ -880,25 +880,11 @@
             });
             
             // Toggle multiplayer section on mobile
-            multiplayerToggle.addEventListener('click', () => {
-                multiplayerSection.style.display = multiplayerSection.style.display === 'none' ? 'block' : 'none';
-            });
-            
-            // Simulate receiving a message (for demo)
-            setInterval(() => {
-                if (Math.random() > 0.7 && users.length > 1) {
-                    const demoMessages = [
-                        "Hai, screenshot yang bagus!",
-                        "Bisa share URL itu?",
-                        "Saya sudah coba dan berhasil!",
-                        "Ada yang butuh bantuan?"
-                    ];
-                    const randomUser = users[Math.floor(Math.random() * users.length)];
-                    if (randomUser !== 'You') {
-                        receiveMessage(randomUser, demoMessages[Math.floor(Math.random() * demoMessages.length)]);
-                    }
-                }
-            }, 10000);
+            if (multiplayerToggle) {
+                multiplayerToggle.addEventListener('click', () => {
+                    multiplayerSection.style.display = multiplayerSection.style.display === 'none' ? 'block' : 'none';
+                });
+            }
             
             // Generate screenshot function
             async function generateScreenshot() {
@@ -1101,25 +1087,45 @@
                 showNotification('Riwayat screenshot telah dihapus', 'success');
             }
             
-            // Send message
+            // Send message - FIXED VERSION
             function sendMessage() {
                 const message = chatInput.value.trim();
                 if (!message) return;
                 
+                // PERBAIKAN: Langsung kirim pesan yang diketik pengguna
                 addChatMessage('You', message);
                 chatInput.value = '';
                 
-                // Simulate response after a delay
+                // Simulate response after a delay (hanya untuk demo)
                 setTimeout(() => {
                     if (users.length > 1 && Math.random() > 0.5) {
-                        const responses = [
-                            "Pesan yang bagus!",
-                            "Saya setuju dengan itu",
-                            "Bisa dijelaskan lebih detail?",
-                            "Terima kasih infonya"
-                        ];
                         const randomUser = users.filter(u => u !== 'You')[Math.floor(Math.random() * (users.length - 1))];
-                        receiveMessage(randomUser, responses[Math.floor(Math.random() * responses.length)]);
+                        
+                        // Respon berdasarkan pesan yang dikirim user
+                        let response;
+                        const lowerMsg = message.toLowerCase();
+                        
+                        if (lowerMsg.includes('hai') || lowerMsg.includes('halo') || lowerMsg.includes('hello')) {
+                            response = `Hai juga! Ada yang bisa saya bantu?`;
+                        } else if (lowerMsg.includes('terima kasih') || lowerMsg.includes('makasih')) {
+                            response = `Sama-sama!`;
+                        } else if (lowerMsg.includes('bagus') || lowerMsg.includes('keren')) {
+                            response = `Terima kasih!`;
+                        } else if (lowerMsg.includes('help') || lowerMsg.includes('bantuan') || lowerMsg.includes('tolong')) {
+                            response = `Ada yang bisa saya bantu?`;
+                        } else {
+                            // Default response
+                            const responses = [
+                                "Pesan yang bagus!",
+                                "Saya setuju dengan itu",
+                                "Bisa dijelaskan lebih detail?",
+                                "Terima kasih infonya",
+                                "Menarik sekali!"
+                            ];
+                            response = responses[Math.floor(Math.random() * responses.length)];
+                        }
+                        
+                        receiveMessage(randomUser, response);
                     }
                 }, 1000);
             }
