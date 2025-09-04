@@ -6,18 +6,37 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api/ip.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/chat.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "public/**/*",
       "use": "@vercel/static"
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/screenshot",
-      "destination": "/api/screenshot.js"
+      "src": "/api/screenshot",
+      "dest": "/api/screenshot.js",
+      "methods": ["POST", "OPTIONS"]
     },
     {
-      "source": "/(.*)",
-      "destination": "/public/$1"
+      "src": "/api/ip",
+      "dest": "/api/ip.js",
+      "methods": ["GET", "OPTIONS"]
+    },
+    {
+      "src": "/api/chat",
+      "dest": "/api/chat.js",
+      "methods": ["GET", "POST", "OPTIONS"]
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
     }
   ],
   "headers": [
@@ -25,9 +44,17 @@
       "source": "/api/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/screenshot.js": {
+      "maxDuration": 30
+    },
+    "api/chat.js": {
+      "maxDuration": 10
+    }
+  }
 }
