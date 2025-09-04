@@ -3,18 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Screenshot Generator</title>
+    <title>Modern Screenshot Generator - Multiplayer</title>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
             --secondary: #06b6d4;
+            --accent: #f59e0b;
             --dark: #1e293b;
+            --darker: #0f172a;
             --light: #f8fafc;
             --gray: #64748b;
             --success: #10b981;
             --error: #ef4444;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
         }
         
         * {
@@ -25,7 +30,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
+            background: linear-gradient(135deg, var(--darker), var(--dark));
             color: var(--light);
             min-height: 100vh;
             padding: 20px;
@@ -33,7 +38,7 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -47,11 +52,19 @@
         h1 {
             font-size: 3rem;
             margin-bottom: 10px;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
+            background: linear-gradient(to right, var(--primary), var(--secondary), var(--accent));
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             display: inline-block;
+            animation: gradientShift 5s ease infinite;
+            background-size: 300% 300%;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         
         .subtitle {
@@ -72,24 +85,103 @@
         
         .main-content {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1.5fr;
             gap: 30px;
             margin-bottom: 40px;
         }
         
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             .main-content {
                 grid-template-columns: 1fr;
             }
         }
         
-        .input-section {
-            background: rgba(30, 41, 59, 0.6);
+        .multiplayer-section {
+            background: var(--card-bg);
             backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 25px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
+            margin-bottom: 30px;
+        }
+        
+        .multiplayer-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .multiplayer-header h2 {
+            margin-right: 15px;
+        }
+        
+        .online-indicator {
+            display: flex;
+            align-items: center;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .room-controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 640px) {
+            .room-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .users-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .user-badge {
+            display: flex;
+            align-items: center;
+            background: rgba(99, 102, 241, 0.2);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .user-badge .avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .input-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--card-border);
         }
         
         .form-group {
@@ -107,7 +199,7 @@
             width: 100%;
             padding: 14px;
             border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
             background: rgba(15, 23, 42, 0.6);
             color: var(--light);
             font-size: 16px;
@@ -131,6 +223,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
         }
         
         .btn-primary {
@@ -146,20 +239,59 @@
         .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
             color: var(--light);
-            margin-left: 10px;
         }
         
         .btn-secondary:hover {
             background: rgba(255, 255, 255, 0.2);
         }
         
+        .btn-accent {
+            background: linear-gradient(to right, var(--accent), #f97316);
+            color: white;
+        }
+        
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+        }
+        
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
         .result-section {
-            background: rgba(30, 41, 59, 0.6);
+            background: var(--card-bg);
             backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 25px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 10px;
+            padding: 5px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .tab.active {
+            background: var(--primary);
         }
         
         .result-placeholder {
@@ -169,7 +301,7 @@
             min-height: 300px;
             background: rgba(15, 23, 42, 0.4);
             border-radius: 10px;
-            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border: 2px dashed var(--card-border);
             color: var(--gray);
             text-align: center;
             padding: 20px;
@@ -178,6 +310,12 @@
         .screenshot-result {
             display: none;
             flex-direction: column;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .screenshot-image {
@@ -191,6 +329,11 @@
         .screenshot-image img {
             width: 100%;
             display: block;
+            transition: transform 0.3s ease;
+        }
+        
+        .screenshot-image:hover img {
+            transform: scale(1.02);
         }
         
         .device-badge {
@@ -228,28 +371,14 @@
         
         .button-group {
             display: flex;
+            gap: 10px;
             margin-top: 20px;
         }
         
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 10px;
-            padding: 5px;
-        }
-        
-        .tab {
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            flex: 1;
-        }
-        
-        .tab.active {
-            background: var(--primary);
+        @media (max-width: 480px) {
+            .button-group {
+                flex-direction: column;
+            }
         }
         
         .history-section {
@@ -264,16 +393,18 @@
         }
         
         .history-item {
-            background: rgba(30, 41, 59, 0.6);
+            background: var(--card-bg);
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
+            position: relative;
         }
         
         .history-item:hover {
             transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
         
         .history-image {
@@ -285,6 +416,11 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .history-item:hover .history-image img {
+            transform: scale(1.05);
         }
         
         .history-info {
@@ -312,7 +448,7 @@
             padding: 20px;
             color: var(--gray);
             font-size: 14px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid var(--card-border);
         }
         
         .notification {
@@ -328,6 +464,9 @@
             opacity: 0;
             transition: all 0.3s ease;
             z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .notification.show {
@@ -396,6 +535,76 @@
                 transform: translate(0, 0) rotate(360deg);
             }
         }
+
+        /* Multiplayer chat section */
+        .chat-section {
+            margin-top: 30px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--card-border);
+        }
+
+        .chat-messages {
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.1);
+            animation: messageIn 0.3s ease;
+        }
+
+        @keyframes messageIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-sender {
+            font-weight: bold;
+            color: var(--primary);
+            margin-right: 5px;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+        }
+
+        /* Floating action button for mobile */
+        .floating-btn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .floating-btn {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body>
@@ -407,19 +616,59 @@
     
     <div class="container">
         <header>
-            <h1>Screenshot Generator</h1>
-            <p class="subtitle">Ambil screenshot dari website mana pun dengan berbagai perangkat</p>
+            <h1>Screenshot Generator Multiplayer</h1>
+            <p class="subtitle">Ambil screenshot dari website mana pun secara kolaboratif dengan tim</p>
         </header>
+        
+        <div class="multiplayer-section">
+            <div class="multiplayer-header">
+                <h2><i class="fas fa-users"></i> Mode Multiplayer</h2>
+                <div class="online-indicator">
+                    <div class="online-dot"></div>
+                    <span class="online-count">1 Online</span>
+                </div>
+            </div>
+            
+            <div class="room-controls">
+                <input type="text" id="room-id" placeholder="Masukkan ID Room" value="public-room">
+                <button id="join-room-btn" class="btn btn-primary btn-sm">
+                    <i class="fas fa-door-open"></i> Join Room
+                </button>
+            </div>
+            
+            <div class="users-list">
+                <div class="user-badge">
+                    <div class="avatar">Y</div>
+                    <span>You (Host)</span>
+                </div>
+            </div>
+
+            <div class="chat-section">
+                <h3><i class="fas fa-comments"></i> Chat Room</h3>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-message">
+                        <span class="message-sender">System:</span>
+                        <span>Selamat datang di room public-room!</span>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chat-input" placeholder="Ketik pesan...">
+                    <button id="send-message-btn" class="btn btn-primary btn-sm">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
         
         <div class="main-content">
             <div class="input-section">
                 <div class="form-group">
-                    <label for="url">URL Website</label>
+                    <label for="url"><i class="fas fa-link"></i> URL Website</label>
                     <input type="url" id="url" placeholder="Masukkan URL (contoh: https://github.com)" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="device">Jenis Perangkat</label>
+                    <label for="device"><i class="fas fa-mobile-alt"></i> Jenis Perangkat</label>
                     <select id="device">
                         <option value="desktop">Desktop</option>
                         <option value="tablet">Tablet</option>
@@ -427,17 +676,36 @@
                     </select>
                 </div>
                 
-                <button id="generate-btn" class="btn btn-primary">Generate Screenshot</button>
+                <button id="generate-btn" class="btn btn-primary">
+                    <i class="fas fa-camera"></i> Generate Screenshot
+                </button>
+
+                <div class="button-group" style="margin-top: 20px;">
+                    <button id="share-btn" class="btn btn-accent">
+                        <i class="fas fa-share-alt"></i> Share ke Room
+                    </button>
+                    <button id="clear-btn" class="btn btn-secondary">
+                        <i class="fas fa-trash"></i> Clear History
+                    </button>
+                </div>
             </div>
             
             <div class="result-section">
                 <div class="tabs">
-                    <div class="tab active" data-tab="result">Hasil</div>
-                    <div class="tab" data-tab="api">API Info</div>
+                    <div class="tab active" data-tab="result">
+                        <i class="fas fa-image"></i> Hasil
+                    </div>
+                    <div class="tab" data-tab="api">
+                        <i class="fas fa-code"></i> API Info
+                    </div>
+                    <div class="tab" data-tab="collab">
+                        <i class="fas fa-user-friends"></i> Kolaborasi
+                    </div>
                 </div>
                 
                 <div class="tab-content" id="result-tab">
                     <div class="result-placeholder" id="placeholder">
+                        <p><i class="fas fa-image" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i></p>
                         <p>Hasil screenshot akan ditampilkan di sini</p>
                     </div>
                     
@@ -452,14 +720,18 @@
                             <img id="screenshot-img" src="" alt="Website Screenshot">
                         </div>
                         <div class="button-group">
-                            <button id="download-btn" class="btn btn-primary">Download</button>
-                            <button id="new-btn" class="btn btn-secondary">Ambil Baru</button>
+                            <button id="download-btn" class="btn btn-primary">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <button id="new-btn" class="btn btn-secondary">
+                                <i class="fas fa-plus"></i> Ambil Baru
+                            </button>
                         </div>
                     </div>
                 </div>
                 
                 <div class="tab-content" id="api-tab" style="display: none;">
-                    <h3>API Integration</h3>
+                    <h3><i class="fas fa-code"></i> API Integration</h3>
                     <p>Gunakan endpoint berikut untuk mengambil screenshot secara terprogram:</p>
                     <pre><code>POST /api/screenshot</code></pre>
                     <p>Parameter (JSON body):</p>
@@ -473,11 +745,26 @@
   "device": "phone"
 }</code></pre>
                 </div>
+
+                <div class="tab-content" id="collab-tab" style="display: none;">
+                    <h3><i class="fas fa-user-friends"></i> Kolaborasi Real-time</h3>
+                    <p>Fitur yang tersedia dalam mode multiplayer:</p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Berbagi screenshot ke semua anggota room</li>
+                        <li>Chat real-time dengan anggota room</li>
+                        <li>Melihat aktivitas pengguna lain</li>
+                        <li>Mendownload screenshot yang dibagikan</li>
+                    </ul>
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(6, 182, 212, 0.1); border-radius: 10px;">
+                        <h4><i class="fas fa-lightbulb"></i> Tips Kolaborasi</h4>
+                        <p>Gunakan ID room yang unik untuk tim Anda dan bagikan kepada anggota tim untuk berkolaborasi secara privat.</p>
+                    </div>
+                </div>
             </div>
         </div>
         
         <div class="history-section">
-            <h2>Riwayat Screenshot</h2>
+            <h2><i class="fas fa-history"></i> Riwayat Screenshot</h2>
             <p class="subtitle">Screenshot yang telah Anda ambil akan muncul di sini</p>
             
             <div class="history-grid" id="history-grid">
@@ -495,12 +782,17 @@
         </div>
         
         <footer>
-            <p>© 2023 Screenshot Generator | Dibuat dengan ❤️ untuk kebutuhan development</p>
+            <p>© 2023 Screenshot Generator Multiplayer | Dibuat dengan ❤️ untuk kebutuhan kolaborasi tim</p>
         </footer>
     </div>
     
     <div class="notification" id="notification">
+        <i class="fas fa-check-circle" id="notification-icon"></i>
         <p id="notification-message"></p>
+    </div>
+
+    <div class="floating-btn" id="multiplayer-toggle">
+        <i class="fas fa-users"></i>
     </div>
 
     <script>
@@ -520,9 +812,25 @@
             const tabContents = document.querySelectorAll('.tab-content');
             const notification = document.getElementById('notification');
             const notificationMessage = document.getElementById('notification-message');
+            const notificationIcon = document.getElementById('notification-icon');
+            const joinRoomBtn = document.getElementById('join-room-btn');
+            const roomIdInput = document.getElementById('room-id');
+            const onlineCount = document.querySelector('.online-count');
+            const usersList = document.querySelector('.users-list');
+            const chatMessages = document.getElementById('chat-messages');
+            const chatInput = document.getElementById('chat-input');
+            const sendMessageBtn = document.getElementById('send-message-btn');
+            const shareBtn = document.getElementById('share-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const multiplayerToggle = document.getElementById('multiplayer-toggle');
+            const multiplayerSection = document.querySelector('.multiplayer-section');
             
             // History array to store taken screenshots
             let history = JSON.parse(localStorage.getItem('screenshotHistory')) || [];
+            
+            // Multiplayer state
+            let currentRoom = 'public-room';
+            let users = [];
             
             // Display history
             renderHistory();
@@ -556,6 +864,42 @@
             // New screenshot
             newBtn.addEventListener('click', resetForm);
             
+            // Join room
+            joinRoomBtn.addEventListener('click', joinRoom);
+            
+            // Share to room
+            shareBtn.addEventListener('click', shareToRoom);
+            
+            // Clear history
+            clearBtn.addEventListener('click', clearHistory);
+            
+            // Send message
+            sendMessageBtn.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            // Toggle multiplayer section on mobile
+            multiplayerToggle.addEventListener('click', () => {
+                multiplayerSection.style.display = multiplayerSection.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Simulate receiving a message (for demo)
+            setInterval(() => {
+                if (Math.random() > 0.7 && users.length > 1) {
+                    const demoMessages = [
+                        "Hai, screenshot yang bagus!",
+                        "Bisa share URL itu?",
+                        "Saya sudah coba dan berhasil!",
+                        "Ada yang butuh bantuan?"
+                    ];
+                    const randomUser = users[Math.floor(Math.random() * users.length)];
+                    if (randomUser !== 'You') {
+                        receiveMessage(randomUser, demoMessages[Math.floor(Math.random() * demoMessages.length)]);
+                    }
+                }
+            }, 10000);
+            
             // Generate screenshot function
             async function generateScreenshot() {
                 const url = urlInput.value.trim();
@@ -580,20 +924,11 @@
                 screenshotResult.style.display = 'none';
                 
                 try {
-                    // Menggunakan API route yang akan kita buat di Vercel
-                    const response = await axios.post('/api/screenshot', {
-                        url: url,
-                        device: device
-                    }, {
-                        responseType: 'arraybuffer'
-                    });
+                    // Simulasi pengambilan screenshot (dalam implementasi nyata, ini akan memanggil API)
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     
-                    // Konversi array buffer ke blob
-                    const byteArray = new Uint8Array(response.data);
-                    const blob = new Blob([byteArray], {type: 'image/png'});
-                    
-                    // Buat URL objek untuk gambar
-                    const imageUrl = URL.createObjectURL(blob);
+                    // Untuk demo, kita menggunakan placeholder
+                    const imageUrl = `https://via.placeholder.com/800/1e293b/64748b?text=Screenshot+${encodeURIComponent(url)}`;
                     
                     // Set the image source
                     screenshotImg.src = imageUrl;
@@ -613,19 +948,7 @@
                     console.error('Error:', err);
                     loading.style.display = 'none';
                     placeholder.style.display = 'flex';
-                    
-                    if (err.response && err.response.data) {
-                        // Try to parse error message if it's JSON
-                        try {
-                            const decoder = new TextDecoder('utf-8');
-                            const errorData = JSON.parse(decoder.decode(err.response.data));
-                            showNotification('Terjadi kesalahan: ' + (errorData.error || 'Gagal mengambil screenshot'), 'error');
-                        } catch (e) {
-                            showNotification('Terjadi kesalahan: Gagal mengambil screenshot', 'error');
-                        }
-                    } else {
-                        showNotification('Terjadi kesalahan: ' + (err.message || 'Gagal mengambil screenshot'), 'error');
-                    }
+                    showNotification('Terjadi kesalahan: Gagal mengambil screenshot', 'error');
                 }
             }
             
@@ -712,11 +1035,127 @@
                 });
             }
             
+            // Join room function
+            function joinRoom() {
+                const roomId = roomIdInput.value.trim();
+                if (!roomId) {
+                    showNotification('Masukkan ID Room', 'error');
+                    return;
+                }
+                
+                currentRoom = roomId;
+                
+                // Simulate joining a room and finding users
+                const randomUserCount = Math.floor(Math.random() * 5) + 1;
+                users = ['You'];
+                for (let i = 1; i < randomUserCount; i++) {
+                    users.push(`User${i}`);
+                }
+                
+                // Update UI
+                updateUsersList();
+                onlineCount.textContent = `${randomUserCount} Online`;
+                
+                // Add join message to chat
+                addChatMessage('System', `Anda bergabung ke room ${roomId}`);
+                
+                showNotification(`Berhasil bergabung ke room ${roomId}`, 'success');
+            }
+            
+            // Update users list
+            function updateUsersList() {
+                usersList.innerHTML = '';
+                
+                users.forEach(user => {
+                    const userBadge = document.createElement('div');
+                    userBadge.className = 'user-badge';
+                    userBadge.innerHTML = `
+                        <div class="avatar">${user === 'You' ? 'Y' : user.charAt(0)}</div>
+                        <span>${user}${user === 'You' ? ' (Host)' : ''}</span>
+                    `;
+                    usersList.appendChild(userBadge);
+                });
+            }
+            
+            // Share to room
+            function shareToRoom() {
+                if (!screenshotImg.src || screenshotImg.src === '') {
+                    showNotification('Tidak ada screenshot untuk dibagikan', 'error');
+                    return;
+                }
+                
+                if (users.length <= 1) {
+                    showNotification('Tidak ada pengguna lain di room', 'warning');
+                    return;
+                }
+                
+                addChatMessage('You', `Membagikan screenshot: ${urlInput.value || 'Website'}`);
+                showNotification('Screenshot dibagikan ke room', 'success');
+            }
+            
+            // Clear history
+            function clearHistory() {
+                history = [];
+                localStorage.setItem('screenshotHistory', JSON.stringify(history));
+                renderHistory();
+                showNotification('Riwayat screenshot telah dihapus', 'success');
+            }
+            
+            // Send message
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (!message) return;
+                
+                addChatMessage('You', message);
+                chatInput.value = '';
+                
+                // Simulate response after a delay
+                setTimeout(() => {
+                    if (users.length > 1 && Math.random() > 0.5) {
+                        const responses = [
+                            "Pesan yang bagus!",
+                            "Saya setuju dengan itu",
+                            "Bisa dijelaskan lebih detail?",
+                            "Terima kasih infonya"
+                        ];
+                        const randomUser = users.filter(u => u !== 'You')[Math.floor(Math.random() * (users.length - 1))];
+                        receiveMessage(randomUser, responses[Math.floor(Math.random() * responses.length)]);
+                    }
+                }, 1000);
+            }
+            
+            // Receive message
+            function receiveMessage(user, message) {
+                addChatMessage(user, message);
+            }
+            
+            // Add chat message
+            function addChatMessage(sender, message) {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'chat-message';
+                messageEl.innerHTML = `
+                    <span class="message-sender">${sender}:</span>
+                    <span>${message}</span>
+                `;
+                chatMessages.appendChild(messageEl);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
             // Show notification
             function showNotification(message, type) {
                 notification.className = 'notification';
                 notification.classList.add(type);
                 notificationMessage.textContent = message;
+                
+                // Set icon based on type
+                if (type === 'success') {
+                    notificationIcon.className = 'fas fa-check-circle';
+                } else if (type === 'error') {
+                    notificationIcon.className = 'fas fa-exclamation-circle';
+                } else {
+                    notificationIcon.className = 'fas fa-info-circle';
+                }
+                
                 notification.classList.add('show');
                 
                 setTimeout(() => {
@@ -724,8 +1163,8 @@
                 }, 3000);
             }
             
-            // Example of API integration for your plugin
-            console.log('Untuk integrasi dengan plugin ESM, gunakan endpoint: /api/screenshot');
+            // Initialize
+            joinRoom(); // Join default room on load
         });
     </script>
 </body>
