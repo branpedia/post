@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screenshot Generator - Chat dengan IP</title>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <title>Screenshot Generator - Chat Real-time</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -364,6 +364,7 @@
             align-items: center;
             justify-content: center;
             min-height: 300px;
+            display: none;
         }
         
         .loader {
@@ -627,8 +628,8 @@
     
     <div class="container">
         <header>
-            <h1>Screenshot Generator - Chat dengan IP</h1>
-            <p class="subtitle">Ambil screenshot dan chat dengan identifikasi IP public</p>
+            <h1>Screenshot Generator - Chat Real-time</h1>
+            <p class="subtitle">Ambil screenshot dan chat real-time dengan identifikasi IP</p>
         </header>
         
         <div class="multiplayer-section">
@@ -812,6 +813,12 @@
     </div>
 
     <script>
+        // Konfigurasi server
+        const SERVER_URL = window.location.origin;
+        let userIP = '';
+        let currentRoom = 'public-room';
+        let messageCheckInterval = null;
+
         document.addEventListener('DOMContentLoaded', function() {
             // Elements
             const generateBtn = document.getElementById('generate-btn');
@@ -845,41 +852,84 @@
             // History array to store taken screenshots
             let history = JSON.parse(localStorage.getItem('screenshotHistory')) || [];
             
-            // Multiplayer state
-            let currentRoom = 'public-room';
-            let users = [];
-            let userIP = '';
+            // Initialize aplikasi
+            initApp();
 
-            // Get user's public IP
-            async function getUserIP() {
+            async function initApp() {
+                // Dapatkan IP pengguna
                 try {
-                    const response = await fetch('https://api.ipify.org?format=json');
-                    const data = await response.json();
-                    userIP = data.ip;
+                    const response = await axios.get(`${SERVER_URL}/api/ip`);
+                    userIP = response.data.ip;
                     userIpElement.textContent = userIP;
-                    
-                    // Update user badge
-                    updateUsersList();
-                    
-                    return userIP;
                 } catch (error) {
                     console.error('Error getting IP:', error);
-                    // Fallback to a random IP for demo purposes
                     userIP = '192.168.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255);
                     userIpElement.textContent = userIP + ' (local)';
+                }
+                
+                // Load messages for default room
+                loadMessagesForRoom(currentRoom);
+                
+                // Start checking for new messages
+                startMessageChecker();
+                
+                // Load history
+                renderHistory();
+            }
+
+            // Load messages for a specific room
+            async function loadMessagesForRoom(roomId) {
+                try {
+                    const response = await axios.get(`${SERVER_URL}/api/chat?roomId=${roomId}`);
+                    const messages = response.data;
                     
-                    // Update user badge
-                    updateUsersList();
+                    chatMessages.innerHTML = '';
                     
-                    return userIP;
+                    if (messages.length === 0) {
+                        addChatMessage('System', `Selamat datang di room ${roomId}! Mulailah percakapan.`, false);
+                    } else {
+                        messages.forEach(msg => {
+                            if (msg.type === 'screenshot') {
+                                addChatMessage(msg.senderIP, `Membagikan screenshot: ${msg.screenshot.url}`, false);
+                            } else {
+                                addChatMessage(msg.senderIP, msg.message, false);
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading messages:', error);
+                    addChatMessage('System', 'Gagal memuat pesan. Silakan refresh halaman.', false);
                 }
             }
             
-            // Display history
-            renderHistory();
-            
-            // Get user IP on load
-            getUserIP();
+            // Start checking for new messages
+            function startMessageChecker() {
+                if (messageCheckInterval) {
+                    clearInterval(messageCheckInterval);
+                }
+                
+                messageCheckInterval = setInterval(async () => {
+                    try {
+                        const response = await axios.get(`${SERVER_URL}/api/chat?roomId=${currentRoom}`);
+                        const messages = response.data;
+                        const currentMessageCount = chatMessages.querySelectorAll('.chat-message').length;
+                        
+                        // If there are new messages, add them
+                        if (messages.length > currentMessageCount) {
+                            for (let i = currentMessageCount; i < messages.length; i++) {
+                                const msg = messages[i];
+                                if (msg.type === 'screenshot') {
+                                    addChatMessage(msg.senderIP, `Membagikan screenshot: ${msg.screenshot.url}`, true);
+                                } else {
+                                    addChatMessage(msg.senderIP, msg.message, true);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error checking for new messages:', error);
+                    }
+                }, 2000); // Check every 2 seconds
+            }
             
             // Tab switching
             tabs.forEach(tab => {
@@ -911,7 +961,17 @@
             newBtn.addEventListener('click', resetForm);
             
             // Join room
-            joinRoomBtn.addEventListener('click', joinRoom);
+            joinRoomBtn.addEventListener('click', () => {
+                const roomId = roomIdInput.value.trim();
+                if (!roomId) {
+                    showNotification('Masukkan ID Room', 'error');
+                    return;
+                }
+                
+                currentRoom = roomId;
+                loadMessagesForRoom(roomId);
+                showNotification(`Bergabung ke room ${roomId}`, 'success');
+            });
             
             // Share to room
             shareBtn.addEventListener('click', shareToRoom);
@@ -956,14 +1016,15 @@
                 screenshotResult.style.display = 'none';
                 
                 try {
-                    // Simulasi pengambilan screenshot (dalam implementasi nyata, ini akan memanggil API)
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    const response = await axios.post(`${SERVER_URL}/api/screenshot`, {
+                        url: url,
+                        device: device
+                    });
                     
-                    // Untuk demo, kita menggunakan placeholder
-                    const imageUrl = `https://via.placeholder.com/800/1e293b/64748b?text=Screenshot+${encodeURIComponent(url)}`;
+                    const screenshotData = response.data;
                     
                     // Set the image source
-                    screenshotImg.src = imageUrl;
+                    screenshotImg.src = screenshotData.imageUrl;
                     
                     // Update device badge
                     deviceBadge.textContent = device.charAt(0).toUpperCase() + device.slice(1);
@@ -973,7 +1034,7 @@
                     screenshotResult.style.display = 'flex';
                     
                     // Add to history
-                    addToHistory(url, device, imageUrl);
+                    addToHistory(url, device, screenshotData.imageUrl);
                     
                     showNotification('Screenshot berhasil diambil!', 'success');
                 } catch (err) {
@@ -1067,62 +1128,32 @@
                 });
             }
             
-            // Join room function
-            function joinRoom() {
-                const roomId = roomIdInput.value.trim();
-                if (!roomId) {
-                    showNotification('Masukkan ID Room', 'error');
-                    return;
-                }
-                
-                currentRoom = roomId;
-                
-                // Simulate joining a room and finding users
-                const randomUserCount = Math.floor(Math.random() * 5) + 1;
-                users = [userIP];
-                for (let i = 1; i < randomUserCount; i++) {
-                    users.push(`192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`);
-                }
-                
-                // Update UI
-                updateUsersList();
-                onlineCount.textContent = `${randomUserCount} Online`;
-                
-                // Add join message to chat
-                addChatMessage('System', `IP ${userIP} bergabung ke room ${roomId}`);
-                
-                showNotification(`Berhasil bergabung ke room ${roomId}`, 'success');
-            }
-            
-            // Update users list
-            function updateUsersList() {
-                usersList.innerHTML = '';
-                
-                users.forEach(user => {
-                    const userBadge = document.createElement('div');
-                    userBadge.className = 'user-badge';
-                    userBadge.innerHTML = `
-                        <div class="avatar">IP</div>
-                        <span>${user}${user === userIP ? ' (Anda)' : ''}</span>
-                    `;
-                    usersList.appendChild(userBadge);
-                });
-            }
-            
             // Share to room
-            function shareToRoom() {
+            async function shareToRoom() {
                 if (!screenshotImg.src || screenshotImg.src === '') {
                     showNotification('Tidak ada screenshot untuk dibagikan', 'error');
                     return;
                 }
                 
-                if (users.length <= 1) {
-                    showNotification('Tidak ada pengguna lain di room', 'warning');
-                    return;
-                }
+                const screenshotData = {
+                    url: urlInput.value || 'Website',
+                    device: deviceSelect.value,
+                    imageUrl: screenshotImg.src
+                };
                 
-                addChatMessage(userIP, `Membagikan screenshot: ${urlInput.value || 'Website'}`);
-                showNotification('Screenshot dibagikan ke room', 'success');
+                try {
+                    await axios.post(`${SERVER_URL}/api/chat`, {
+                        roomId: currentRoom,
+                        userIP: userIP,
+                        type: 'screenshot',
+                        screenshotData: screenshotData
+                    });
+                    
+                    showNotification('Screenshot dibagikan ke room', 'success');
+                } catch (error) {
+                    console.error('Error sharing screenshot:', error);
+                    showNotification('Gagal membagikan screenshot', 'error');
+                }
             }
             
             // Clear history
@@ -1134,55 +1165,26 @@
             }
             
             // Send message
-            function sendMessage() {
+            async function sendMessage() {
                 const message = chatInput.value.trim();
                 if (!message) return;
                 
-                // Kirim pesan dengan IP pengguna
-                addChatMessage(userIP, message);
-                chatInput.value = '';
-                
-                // Simulate response after a delay (hanya untuk demo)
-                setTimeout(() => {
-                    if (users.length > 1 && Math.random() > 0.5) {
-                        const randomUser = users.filter(u => u !== userIP)[Math.floor(Math.random() * (users.length - 1))];
-                        
-                        // Respon berdasarkan pesan yang dikirim user
-                        let response;
-                        const lowerMsg = message.toLowerCase();
-                        
-                        if (lowerMsg.includes('hai') || lowerMsg.includes('halo') || lowerMsg.includes('hello')) {
-                            response = `Hai juga! Ada yang bisa saya bantu?`;
-                        } else if (lowerMsg.includes('terima kasih') || lowerMsg.includes('makasih')) {
-                            response = `Sama-sama!`;
-                        } else if (lowerMsg.includes('bagus') || lowerMsg.includes('keren')) {
-                            response = `Terima kasih!`;
-                        } else if (lowerMsg.includes('help') || lowerMsg.includes('bantuan') || lowerMsg.includes('tolong')) {
-                            response = `Ada yang bisa saya bantu?`;
-                        } else {
-                            // Default response
-                            const responses = [
-                                "Pesan yang bagus!",
-                                "Saya setuju dengan itu",
-                                "Bisa dijelaskan lebih detail?",
-                                "Terima kasih infonya",
-                                "Menarik sekali!"
-                            ];
-                            response = responses[Math.floor(Math.random() * responses.length)];
-                        }
-                        
-                        receiveMessage(randomUser, response);
-                    }
-                }, 1000);
-            }
-            
-            // Receive message
-            function receiveMessage(user, message) {
-                addChatMessage(user, message);
+                try {
+                    await axios.post(`${SERVER_URL}/api/chat`, {
+                        roomId: currentRoom,
+                        message: message,
+                        userIP: userIP
+                    });
+                    
+                    chatInput.value = '';
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    showNotification('Gagal mengirim pesan', 'error');
+                }
             }
             
             // Add chat message
-            function addChatMessage(sender, message) {
+            function addChatMessage(sender, message, scroll = true) {
                 const messageEl = document.createElement('div');
                 messageEl.className = 'chat-message';
                 messageEl.innerHTML = `
@@ -1190,7 +1192,10 @@
                     <span>${message}</span>
                 `;
                 chatMessages.appendChild(messageEl);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                if (scroll) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
             }
             
             // Show notification
@@ -1214,9 +1219,6 @@
                     notification.classList.remove('show');
                 }, 3000);
             }
-            
-            // Initialize
-            joinRoom(); // Join default room on load
         });
     </script>
 </body>
